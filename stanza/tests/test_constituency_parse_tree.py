@@ -12,16 +12,19 @@ def test_leaf_preterminal():
     assert foo.is_leaf()
     assert not foo.is_preterminal()
     assert len(foo.children) == 0
+    assert str(foo) == 'foo'
 
     bar = Tree(label="bar", children=foo)
     assert not bar.is_leaf()
     assert bar.is_preterminal()
     assert len(bar.children) == 1
+    assert str(bar) == "(bar foo)"
 
     baz = Tree(label="baz", children=[bar])
     assert not baz.is_leaf()
     assert not baz.is_preterminal()
     assert len(baz.children) == 1
+    assert str(baz) == "(baz (bar foo))"
 
 def test_unique_labels():
     """

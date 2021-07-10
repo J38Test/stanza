@@ -2,6 +2,9 @@
 Tree datastructure
 """
 
+from collections import deque
+from io import StringIO
+
 from stanza.models.common.doc import StanzaObject
 
 class Tree(StanzaObject):
@@ -35,11 +38,25 @@ class Tree(StanzaObject):
                     yield preterminal
 
     def __repr__(self):
-        if not self.children:
-            return str(self.label)
-        else:
-            pieces = [str(self.label)] + [str(x) for x in self.children]
-            return "(" + " ".join(pieces) + ")"
+        with StringIO() as buf:
+            stack = deque()
+            stack.append(self)
+            while len(stack) > 0:
+                node = stack.pop()
+                if node == ')' or node == ' ':
+                    buf.write(node)
+                    continue
+                if not node.children:
+                    buf.write(node.label)
+                    continue
+                buf.write("(")
+                buf.write(node.label)
+                stack.append(')')
+                for child in reversed(node.children):
+                    stack.append(child)
+                    stack.append(' ')
+            buf.seek(0)
+            return buf.read()
 
     def __eq__(self, other):
         if self is other:
