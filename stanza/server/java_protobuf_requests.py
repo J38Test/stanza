@@ -1,5 +1,6 @@
 import subprocess
 
+from stanza.protobuf import ParseTree
 from stanza.server.client import resolve_classpath
 
 def send_request(request, response_type, java_main, classpath=None):
@@ -15,6 +16,24 @@ def send_request(request, response_type, java_main, classpath=None):
     response = response_type()
     response.ParseFromString(pipe.stdout)
     return response
+
+def build_tree(tree, score):
+    """
+    Builds a ParseTree from CoreNLP.proto
+
+    Populates the value field from tree.label and iterates through the
+    children via tree.children.  Should work on any tree structure
+    which follows that layout
+
+    The score will be added to the top node (if it is not None)
+    """
+    proto_tree = ParseTree()
+    proto_tree.value = tree.label
+    if score is not None:
+        proto_tree.score = score
+    for child in tree.children:
+        proto_tree.child.append(build_tree(child, None))
+    return proto_tree
 
 def add_token(token_list, word, token):
     """
