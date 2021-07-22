@@ -3,17 +3,15 @@
 
 import stanza
 from stanza.protobuf import EvaluateParserRequest, EvaluateParserResponse
-from stanza.server.java_protobuf_requests import send_request, JavaProtobufContext
+from stanza.server.java_protobuf_requests import send_request, build_tree, JavaProtobufContext
 
 
 EVALUATE_JAVA = "edu.stanford.nlp.parser.metrics.EvaluateExternalParser"
 
-def send_evaluate_request(request):
-    return send_request(request, EvaluateParserResponse, EVALUATE_JAVA)
-
-def build_request(gold_tree, predicted_trees):
+def build_request(gold_trees, predictions):
     """
-    predicted_trees should be a list of pairs:  [(predicted_tree, score)]
+    predicted_trees should be a list of list of pairs:  [[(predicted_tree, score)]]
+      one list for each gold_tree
     Note that for now, only one tree is measured, but this may be extensible in the future
     Trees should be in the form of a Tree from parse_tree.py
     """
@@ -32,4 +30,19 @@ def build_request(gold_tree, predicted_trees):
                 word_idx = word_idx + 1
 
     return request
+
+
+class EvaluateParser(JavaProtobufContext):
+    """
+    Parser evaluation context window
+
+    This is a context window which keeps a process open.  Should allow
+    for multiple requests without launching new java processes each time.
+    """
+    def __init__(self, classpath=None):
+        super(EvaluateParser, self).__init__(classpath, EvaluateParserResponse, EVALUATE_JAVA)
+
+    def process(self, doc, *semgrex_patterns):
+        request = build_request(doc, semgrex_patterns)
+        return self.process_request(request)
 
