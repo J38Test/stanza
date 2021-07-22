@@ -2,6 +2,22 @@
 Utility functions for dealing with NER tagging.
 """
 
+def is_basic_scheme(all_tags):
+    """
+    Check if a basic tagging scheme is used. Return True if so.
+
+    Args:
+        all_tags: a list of NER tags
+
+    Returns:
+        True if the tagging scheme does not use B-, I-, etc, otherwise False
+    """
+    for tag in all_tags:
+        if len(tag) > 2 and tag[:2] in ('B-', 'I-', 'S-', 'E-'):
+            return False
+    return True
+
+
 def is_bio_scheme(all_tags):
     """
     Check if BIO tagging scheme is used. Return True if so.
@@ -44,6 +60,28 @@ def to_bio2(tags):
         else:
             new_tags.append(tag)
     return new_tags
+
+def basic_to_bio(tags):
+    """
+    Convert a basic tag sequence into a BIO sequence.
+    You can compose this with bio2_to_bioes to convert to bioes
+
+    Args:
+        tags: a list of tags in basic (no B-, I-, etc) format
+
+    Returns:
+        new_tags: a list of tags in BIO format
+    """
+    new_tags = []
+    for i, tag in enumerate(tags):
+        if tag == 'O':
+            new_tags.append(tag)
+        elif i == 0 or tags[i-1] == 'O' or tags[i-1] != tag:
+            new_tags.append('B-' + tag)
+        else:
+            new_tags.append('I-' + tag)
+    return new_tags
+
 
 def bio2_to_bioes(tags):
     """

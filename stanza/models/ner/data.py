@@ -7,7 +7,7 @@ from stanza.models.common.vocab import PAD_ID, VOCAB_PREFIX
 from stanza.models.pos.vocab import CharVocab, WordVocab
 from stanza.models.ner.vocab import TagVocab, MultiVocab
 from stanza.models.common.doc import *
-from stanza.models.ner.utils import is_bio_scheme, to_bio2, bio2_to_bioes
+from stanza.models.ner.utils import is_bio_scheme, is_basic_scheme, basic_to_bio, to_bio2, bio2_to_bioes
 
 logger = logging.getLogger('stanza')
 
@@ -141,11 +141,16 @@ class DataLoader:
     def process_tags(self, sentences):
         res = []
         # check if tag conversion is needed
-        convert_to_bioes = False
+        convert_bio_to_bioes = False
+        convert_basic_to_bioes = False
         is_bio = is_bio_scheme([x[1] for sent in sentences for x in sent])
+        is_basic = is_basic_scheme([x[1] for sent in sentences for x in sent])
         if is_bio and self.args.get('scheme', 'bio').lower() == 'bioes':
-            convert_to_bioes = True
+            convert_bio_to_bioes = True
             logger.debug("BIO tagging scheme found in input; converting into BIOES scheme...")
+        elif is_basic and self.args.get('scheme', 'bio').lower() == 'bioes':
+            convert_basic_to_bioes = True
+            logger.debug("Basic tagging scheme found in input; converting into BIOES scheme...")
         # process tags
         for sent in sentences:
             words, tags = zip(*sent)
@@ -155,8 +160,10 @@ class DataLoader:
             # first ensure BIO2 scheme
             tags = to_bio2(tags)
             # then convert to BIOES
-            if convert_to_bioes:
+            if convert_bio_to_bioes:
                 tags = bio2_to_bioes(tags)
+            elif convert_basic_to_bioes:
+                tags = bio2_to_bioes(basic_to_bio(tags))
             res.append([[w,t] for w,t in zip(words, tags)])
         return res
 
